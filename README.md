@@ -36,8 +36,11 @@ install:
 
      pip install nnpy flask pyzmq
 
+
 See the `client` and `server` folders.
---------------
+
+
+---------
 
 todo:
     - fix tests

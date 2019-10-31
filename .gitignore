@@ -4,4 +4,4 @@ tmp/*
 *~
 __pychache__
 db.pkl
-data/*
+data/
