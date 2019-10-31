@@ -1,0 +1,202 @@
+<div class=" p2 maincontent flex flex-wrap">
+  <div class=" col-4  ">
+    <div class="flex flex-column ">
+      <div class="col-12 px2">
+        <div class="card overflow-hidden border rounded">
+          <div class="card-header p2 bold white ">mininginfo</div>
+          <div class="card-body">
+            <div id="blocks"></div>
+            <div id="difficulty"></div>
+            <div id="chain"></div>
+            <div id="networkhashps"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 px2">
+        <div class="card overflow-hidden border rounded">
+          <div class="card-header p2 bold white ">chaintxstats</div>
+          <div class="card-body">
+            time: <div id="time"></div>
+            txcount: <div id="txcount"></div>
+            txrate: <div id="txrate"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class=" col-4  ">
+    <div class="flex flex-column ">
+    <div class="col-12 px2">
+      <div class="card overflow-hidden border rounded">
+        <div class="card-header p2 bold white ">Mempoolinfo</div>
+        <div class="card-body">
+          <span>size (transactions)<div id="size"></div></span>
+          <div id="bytes"></div>
+          <div id="usage"></div>
+           <div id="chart_mempoolinfo" style="width:100%;height:200px"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="col-12 px2">
+      <div class="card overflow-hidden border rounded">
+        <div class="card-header p2 bold white ">load </div>
+        <div class="card-body">
+            <div id="chart_load" style="width:100%;height:200px"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+  </div>
+ {{ info }}
+</div>
+
+{% block endjs %}
+<script>
+
+$(function() {
+
+    var xsize = 2000;
+
+    var data_load = [{data: Array(xsize).fill('') }] ;
+		var load = $.plot("#chart_load", data_load , {
+			series: {
+        shadowSize: 0,	// Drawing is faster without shadows
+        lines : {fill: true,},
+    	},
+			yaxis: {
+        autoScale: "loose",
+        growOnly: false,
+			},
+			xaxis: {
+				show: true,
+        mode: "time",
+        timeBase: "milliseconds",
+        // autoScale: "loose",
+        growOnly: false,
+        timezone: "browser",
+        fill: true,
+			},
+		});
+
+    var data_mempoolinfo = Array(xsize).fill('');
+    var mempoolinfo = $.plot("#chart_mempoolinfo", [ data_mempoolinfo ], {
+			series: {
+        shadowSize: 0,	// Drawing is faster without shadows
+        lines : {fill: true,},
+        color: "#006600"
+    	},
+			yaxis: {
+        autoScale: "loose",
+        growOnly: false,
+			},
+			xaxis: {
+        show: true,
+        mode: "time",
+        timeBase: "milliseconds",
+        // autoScale: "loose",
+        growOnly: false,
+        timezone: "browser",
+			}
+		});
+
+		function update(val, plot, data) {
+      data.push(val);
+      if (data.length > xsize ){
+        data.shift();
+      }
+			plot.setData([data]);
+      plot.setupGrid(true);
+			plot.draw();
+		}
+
+    // notify if not received data in 30sec
+    var timeoutcount = 0;
+    setInterval(function() {
+       timeoutcount++;
+       if (timeoutcount >= 3){
+         console.log("connection to BTCnode lost");
+       }
+     }, 10000);
+
+     // var ws_init = new WebSocket('ws://127.0.0.1:5556',[
+     //   'pub.sp.nanomsg.org'
+     // ])
+
+    var ws = new WebSocket('ws://127.0.0.1:5555',[
+       'pub.sp.nanomsg.org'
+    ])
+
+    function handleMessage(msg){
+        timeoutcount = 0;
+        d = msg.split(' ');
+        var timeStamp = d[0] +'000';
+
+        if (d[1] === 'load'){
+          console.log(d);
+          let content = msg.split(d[1])[1];
+
+          value = parseFloat(content,3)
+          update([timeStamp, value], load, data_load );
+        }
+        if (d[1] === 'mininginfo'){
+          let content = msg.split(d[1])[1];
+          c = JSON.parse(content);
+          document.getElementById('blocks').innerHTML = c['blocks'];
+          document.getElementById('difficulty').innerHTML = c['difficulty'];
+          document.getElementById('chain').innerHTML = c['chain'];
+          document.getElementById('networkhashps').innerHTML = c['networkhashps'];
+
+        }
+        if (d[1] === 'blockcount'){
+          let content = msg.split(d[1])[1];
+          c = JSON.parse(content);
+          document.getElementById('blocks').innerHTML = content['blocks'];
+        }
+        if (d[1] === 'chaintxstats'){
+          let content = msg.split(d[1])[1];
+          c = JSON.parse(content);
+          document.getElementById('time').innerHTML = c['time'];
+          document.getElementById('txcount').innerHTML = c['txcount'];
+          document.getElementById('txrate').innerHTML = c['txrate'];
+        }
+        if (d[1] === 'mempoolinfo'){
+          timeoutcount=0;
+          let content = msg.split(d[1])[1];
+          c = JSON.parse(content);
+          document.getElementById('size').innerHTML = c['size'];
+          document.getElementById('bytes').innerHTML = c['bytes'];
+          document.getElementById('usage').innerHTML = c['usage'];
+          value = parseFloat(c['size'],3)
+          update([timeStamp, value], mempoolinfo, data_mempoolinfo);
+        }
+    }
+
+    $.get('/data.json', function(data, status){
+      // init data
+      let i;
+      for (i=0; i < data['msg'].length; i++){
+        // todo: pocess as arrays
+        handleMessage(data['msg'][i]);
+      }
+
+      // listen for new mesages
+      ws.onmessage = function( e ){
+        var reader = new FileReader() // handle binary messages
+        reader.addEventListener('loadend', function(){
+          var result = reader.result;
+          handleMessage(result);
+        });
+        reader.readAsText( e.data );
+      }
+    });
+
+
+	});
+</script>
+{% endblock %}

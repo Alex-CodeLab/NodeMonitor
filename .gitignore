@@ -1,0 +1,7 @@
+*.py[co]
+*.sw[po]
+tmp/*
+*~
+__pychache__
+db.pkl
+data/*
