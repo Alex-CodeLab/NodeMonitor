@@ -16,7 +16,7 @@ Can be used with without a frontend dashboard (using Flask)
 
 Goals:
 - simple and efficient
-- small footprint (few external libs)
+- small footprint (few external libraries)
 - easy to audit
 - super easy to extend
 - extremely low cpu/memory usage
@@ -38,6 +38,12 @@ install:
 
 
 See the `client` and `server` folders.
+
+------------
+
+Contributing
+This is a open-source, community project.
+Build whatever you want. Start with creating a ticket that describes the problem.
 
 
 ---------

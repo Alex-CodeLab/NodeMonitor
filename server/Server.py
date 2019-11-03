@@ -37,6 +37,7 @@ class Server():
         if self.debug:
             print(str(s))
 
+
     def maven(self, port, wsock_port ):
 
         sub = nnpy.Socket(nnpy.AF_SP, nnpy.SUB)
@@ -53,14 +54,13 @@ class Server():
             msg = sub.recv()
             wsock.send(msg)
             # add to db
-            self.print(msg)
+            # self.print(msg)
             msgArray = msg.decode("utf-8").split(' ')
-            # print( msgArray[2].decode(), self.modules)
-            # print(msgArray[2] , self.modules.keys())
-            if msgArray[2]  in self.modules.keys():
-                db.write(msgArray[1], msg.decode("utf-8"))
+            module = msgArray[2]
+            if module in self.modules.keys():
+                db.write(msgArray[1], msg.decode("utf-8"), module)
             else:
-                print('Unknown module {}. Ignored.'.format(msgArray[2]))
+                print('Unknown module {}. Ignored.'.format(module))
 
 
 def shutdown(signum, frame):
@@ -79,4 +79,26 @@ if __name__ == '__main__':
 
     if not server.args.get('--no-webserver'):
         from webserver import *
+        from flask import Flask, render_template, jsonify, make_response
+
+        app = Flask(__name__)
+        app.config['SECRET_KEY'] = 'some_secret_key.'
+
+        @app.route('/')
+        def index():
+            # socket.setsockopt_string(zmq.SUBSCRIBE, "rawtx")
+            context = { 'modules': server.modules, }
+            return render_template("main2.html", **context)
+
+        @app.route('/data.json')
+        def init_dashboard():
+            # send data currently in db
+            with open('db.pkl', 'rb') as f:
+                dq = pickle.load(f)
+            a = []
+            for mod in server.modules:
+                for message in dq[mod.encode('utf-8')] :
+                    a.append(message.decode())
+
+            return jsonify({'msg': a, })
         app.run(debug=False)

@@ -18,19 +18,19 @@ def delete_first_lines(filename, line_nums):
         stderr=subprocess.STDOUT
         )
 
+
 class Db():
 
-    maxsize = 20000
+    maxsize = 2000
 
-    def write(self, node, message):
+    def write(self, node, message, module):
         dir_path  = os.getcwd() + '/data/' + node
-
         if not os.path.exists(dir_path ):
             os.makedirs(dir_path)
-        db_file = '{}/main.db'.format(dir_path)
+        db_file = '{}/{}.db'.format(dir_path, module)
 
-        with open(db_file, 'a') as myfile:
-            myfile.write(message.rstrip() +'\n')
+        with open(db_file, 'a') as f:
+            f.write(message.rstrip() +'\n')
 
         c = wccount(db_file) - self.maxsize
         if c > 0:
