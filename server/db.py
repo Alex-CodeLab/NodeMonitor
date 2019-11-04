@@ -36,23 +36,24 @@ class Db():
         if c > 0:
             delete_first_lines(db_file, c)
 
+
     def read(self, node, module):
 
         file_name = os.getcwd() + '/data/' + node +'/'+ module + '.db'
         print(file_name)
+
+        data = []
         with open(file_name, 'r') as f:
-            line = f.readline()
-            module_data = []
-            while line != '':
+            for line in f:
+                module_data = []
                 m = {}
                 m_data = line.split(' {')[0]
                 c = m_data.split(' ')
-                m['ts'] = c[0]
-                m['node'] = c[1]
-                m['module'] = c[2]
-                print(m)
-                line = f.readline()
+                m['ts'], m['node'], m['module']  = c
+                data.append(m)
+        return data
 
-    def read_main(self):
-        block = []
-        pass
+
+    # def read_main(self):
+    #     block = []
+    #     pass
