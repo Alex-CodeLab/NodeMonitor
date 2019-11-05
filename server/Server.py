@@ -93,10 +93,9 @@ if __name__ == '__main__':
 
         @app.route('/data/<module>')
         def get_data(module):
-            print(module)
             data =db.read('machina', module)
-            # print(data)
+
             a = []
 
-            return jsonify({'msg': a, })
+            return jsonify({'msg': data, })
         app.run(debug=False)

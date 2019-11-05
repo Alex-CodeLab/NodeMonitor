@@ -40,12 +40,9 @@ class Db():
     def read(self, node, module):
 
         file_name = os.getcwd() + '/data/' + node +'/'+ module + '.db'
-        print(file_name)
-
         data = []
         with open(file_name, 'r') as f:
             for line in f:
-                module_data = []
                 m = {}
                 m_data = line.split(' {')[0]
                 c = m_data.split(' ')
