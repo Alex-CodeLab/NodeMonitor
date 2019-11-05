@@ -1,1 +1,24 @@
-{% extends 'dashboard.html' %}
+{% extends 'base.html' %}
+
+
+  {% block content %}
+
+
+<script>
+
+var config = {{ modules|safe }} ;
+var modules = ['load','memory'] ;
+
+for (var mod of modules){
+  $.getJSON('/data/' + mod)
+    .then(function(data){
+      console.log(data);
+    })
+    .fail(function(){
+      console.log('Unable to download data.');
+    })
+}
+
+</script>
+
+{% endblock %}

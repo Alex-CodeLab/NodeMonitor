@@ -54,7 +54,6 @@ class Server():
             msg = sub.recv()
             wsock.send(msg)
             # add to db
-            # self.print(msg)
             msgArray = msg.decode("utf-8").split(' ')
             module = msgArray[2]
             if module in self.modules.keys():
@@ -78,27 +77,25 @@ if __name__ == '__main__':
     Process(target=server.maven, args=(port, websocket_port)).start()
 
     if not server.args.get('--no-webserver'):
+
         from webserver import *
         from flask import Flask, render_template, jsonify, make_response
 
         app = Flask(__name__)
         app.config['SECRET_KEY'] = 'some_secret_key.'
+        db = Db()
 
         @app.route('/')
         def index():
             # socket.setsockopt_string(zmq.SUBSCRIBE, "rawtx")
-            context = { 'modules': server.modules, }
+            context = { 'modules': server.modules }
             return render_template("main2.html", **context)
 
-        @app.route('/data.json')
-        def init_dashboard():
-            # send data currently in db
-            with open('db.pkl', 'rb') as f:
-                dq = pickle.load(f)
-            a = []
-            for mod in server.modules:
-                for message in dq[mod.encode('utf-8')] :
-                    a.append(message.decode())
+        @app.route('/data/<module>')
+        def get_data(module):
+            data =db.read('machina', module)
 
-            return jsonify({'msg': a, })
+            a = []
+
+            return jsonify({'msg': data, })
         app.run(debug=False)
