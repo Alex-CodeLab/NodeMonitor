@@ -89,7 +89,12 @@ if __name__ == '__main__':
         def index():
             # socket.setsockopt_string(zmq.SUBSCRIBE, "rawtx")
             context = { 'modules': server.modules }
-            return render_template("main2.html", **context)
+            return render_template("main3.html", **context)
+
+        @app.route('/test/')
+        def react():
+            context= {}
+            return render_template("frontend/index.html", **context)
 
         @app.route('/data/<module>')
         def get_data(module):
@@ -98,4 +103,4 @@ if __name__ == '__main__':
             a = []
 
             return jsonify({'msg': data, })
-        app.run(debug=False)
+        app.run(debug=True)

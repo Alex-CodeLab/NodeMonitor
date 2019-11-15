@@ -25,6 +25,7 @@ class Db():
 
     def write(self, node, message, module):
         dir_path  = os.getcwd() + '/data/' + node
+
         if not os.path.exists(dir_path ):
             os.makedirs(dir_path)
         db_file = '{}/{}.db'.format(dir_path, module)
