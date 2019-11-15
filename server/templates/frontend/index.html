@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+<div id="app"></div>
+<div id="line"></div>
+<div id="sales-data"></div>
+<!-- <div id="rendered-series"></div> -->
+
+<script src="https://unpkg.com/mithril/mithril.js"></script>
+<script src="https://rawgit.com/andreaferretti/paths-js/master/dist/global/paths.js"></script>
+<script src="https://unpkg.com/d3/dist/d3.min.js"></script>
+<script src="https://unpkg.com/d3fc/build/d3fc.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+<script>
+
+
+var ws = new WebSocket('ws://127.0.0.1:5555',[
+   'pub.sp.nanomsg.org'
+])
+
+ws.onmessage = function( e ){
+  var reader = new FileReader() // handle binary messages
+  reader.addEventListener('loadend', function(){
+    var result = reader.result;
+    handleMessage(result);
+  });
+  reader.readAsText( e.data );
+}
+
+var messages = [];
+
+function handleMessage(message){
+  // console.log(e);
+  if (typeof message === 'string' || message instanceof String) {
+    messages.push(message);
+    // console.log(messages);
+    // All ok, redraw
+    m.redraw()
+}
+}
+
+
+  var root = document.getElementById('app');
+
+    var data;
+    var getdata = function() {
+        m.request({
+            method: "GET",
+            url: "/data/load",
+            body: {},
+            withCredentials: true,
+        })
+        .then(function(data) {
+            console.log(data);
+        })
+    }
+
+
+  var dashboard = {
+
+    view: function(vnode) {
+      return m("main",[
+        m("a", {href: "#!/month"}, "month!"),
+        m("a", {href: "#!/charts"}, "charts")
+
+      ]
+    )}
+  }
+
+ var count =0;
+
+  var month = {
+    view: function(vnode) {
+      return m("main", [
+        m("a", { href: "#!/dashboard" }, "Dashboard"),
+        // changed the next line
+        m("button", {onclick: getdata }, ),
+
+      ])
+    }
+  }
+
+
+
+// /** D3Chart wrapper component */
+// var D3Chart = {
+//   oncreate: function(vnode){
+//     console.log(vnode.dom);
+//
+//   },
+//   onremove: function(vnode) {
+//       console.log("removing DOM element")
+//   },
+//   view: function(vnode){
+//     return m("div", {id: 'charts'})
+//   }
+// }
+
+
+function D3Chart() {
+  return {
+    oncreate: function(vnode){
+
+
+    },
+    view: function (vnode) {
+      return m('div')
+    }
+  }
+}
+
+
+function AChart() {
+  // a random number generator
+    var generator = fc.randomGeometricBrownianMotion()
+        .steps(11);
+
+    // some formatters
+    var dateFormatter = d3.timeFormat('%b');
+
+    // randomly generated sales data starting at one
+    var data = generator(4).map(function(d, i) {
+      return {
+        month: dateFormatter(new Date(0, i + 1, 0)),
+        sales: d + i / 2
+      };
+    });
+
+    var width = 500;
+    var height = 250;
+    var container = d3.select('#chart')
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height);
+
+    // create the scales
+    var xScale = d3.scalePoint()
+        .domain(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
+        .range([0, width])
+        .padding(0.5);
+
+    var yScale = d3.scaleLinear()
+        .domain([0, 10])
+        .range([height, 0]);
+
+    // create a series
+    var series = fc.seriesSvgBar()
+        .bandwidth(40)
+        .crossValue(function(d) { return d.month; })
+        .mainValue(function(d) { return d.sales; })
+        .xScale(xScale)
+        .yScale(yScale);
+
+    // render
+    container
+        .datum(data)
+        .call(series);
+}
+
+var WebSocketMessages = {
+    oninit: function(){console.log(123)},
+    view: function(vnode) {
+      return m('.outer',[
+      m("a", {href: "#!/month"}, "month!"),
+      m("a", {href: "#!/charts"}, "charts"),
+      m("ul", messages.map(function(message) {
+            return m("li", message);
+        }))
+      ])
+
+    }
+}
+
+var Example = {
+  oninit: function(vnode) {
+    console.log("initialized")
+
+    },
+  oncreate: function(vnode) {
+
+
+    console.log("DOM created")
+    },
+  onbeforeupdate: function(newVnode, oldVnode) {
+    return true
+    },
+  onupdate: function(vnode) {
+    console.log("DOM updated")
+    console.log(data)
+    },
+  view: function(vnode) {
+    return m('.outer',[
+      m("a", {href: "#!/month"}, "month!"),
+      m("a", {href: "#!/charts"}, "charts"),
+      // m('#rt', RT.list)
+
+      // m('#chart', {
+      //   oncreate(vnode) {
+      //   AChart()
+      //   }
+      // })
+    ])
+
+  }
+}
+
+
+  m.route(root, "/", {
+      "/": dashboard,
+      "/month": month,
+      "/charts":WebSocketMessages,
+  })
+
+</script>
+{% endblock %}
