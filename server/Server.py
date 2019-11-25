@@ -1,14 +1,16 @@
-import zmq, nnpy
+import nnpy
 import configparser
 import time
-from db import Db
-import struct, json, binascii, signal, pickle
+from db import Store
+import json
+import binascii
+import signal
 from flask import Flask, render_template, jsonify, make_response
 from multiprocessing import Process
-from collections import deque
 from functools import partial
 from docopt import docopt
 from pathlib import Path
+
 
 class Server():
     """
@@ -27,19 +29,13 @@ class Server():
         self.debug = self.args.get('--debug', False)
         config = configparser.ConfigParser()
         config.read('server.conf')
-        self.modules = json.loads(config['DEFAULT'].get('modules','{}'))
-        # self.dq = self.openDB()
+        self.modules = json.loads(config['DEFAULT'].get('modules', '{}'))
 
     def __str__(self):
         return "Maven"
 
-    def print(self, s):
-        if self.debug:
-            print(str(s))
-
-
-    def maven(self, port, wsock_port ):
-
+    def maven(self, port, wsock_port):
+        # internal messaging
         sub = nnpy.Socket(nnpy.AF_SP, nnpy.SUB)
         sub.bind('tcp://127.0.0.1:{}'.format(port))
         sub.setsockopt(nnpy.SUB, nnpy.SUB_SUBSCRIBE, '')
@@ -48,22 +44,36 @@ class Server():
         wsock = nnpy.Socket(nnpy.AF_SP, nnpy.PUB)
         wsock.bind('ws://*:{}'.format(wsock_port))
 
-        db = Db()
+        db = Store()
         i = 0
+        self.init_batch()
         while True:
             msg = sub.recv()
             wsock.send(msg)
             # add to db
             msgArray = msg.decode("utf-8").split(' ')
+            client = msgArray[1]
             module = msgArray[2]
             if module in self.modules.keys():
-                db.write(msgArray[1], msg.decode("utf-8"), module)
+                # add message to batch
+                if client not in self.batch[module]:
+                    self.batch[module] = {client: []}
+                self.batch[module][client].append(msg.decode("utf-8"))
+                i += 1
             else:
-                print('Unknown module {}. Ignored.'.format(module))
+                print("Unknown module '{}'. Ignored.".format(module))
+            if i >= 10:
+                db.write(self.batch)
+                self.init_batch()
+                i = 0
+
+    def init_batch(self):
+        self.batch = {}
+        for module in self.modules:
+            self.batch[module] = {}
 
 
 def shutdown(signum, frame):
-    # todo: write to db
     print('Closing.')
     exit(0)
 
@@ -77,30 +87,23 @@ if __name__ == '__main__':
     Process(target=server.maven, args=(port, websocket_port)).start()
 
     if not server.args.get('--no-webserver'):
-
         from webserver import *
         from flask import Flask, render_template, jsonify, make_response
 
         app = Flask(__name__)
         app.config['SECRET_KEY'] = 'some_secret_key.'
-        db = Db()
+        db = Store()
+
+
 
         @app.route('/')
-        def index():
-            # socket.setsockopt_string(zmq.SUBSCRIBE, "rawtx")
-            context = { 'modules': server.modules }
-            return render_template("main3.html", **context)
-
-        @app.route('/test/')
         def react():
-            context= {}
-            return render_template("frontend/index.html", **context)
+            context = {'modules': server.modules}
+            return render_template("main2.html", **context)
 
         @app.route('/data/<module>')
         def get_data(module):
-            data =db.read('machina', module)
-
+            data = db.read('machina', module)
             a = []
-
             return jsonify({'msg': data, })
-        app.run(debug=True)
+        app.run(debug=False)
