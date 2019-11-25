@@ -2,6 +2,6 @@
 *.sw[po]
 tmp/*
 *~
-__pychache__
+__pychache__/
 db.pkl
 data/

@@ -3,7 +3,7 @@ import json
 from . import interval
 
 
-@interval(3)
+@interval(1)
 def load():
     avg_1, avg_5, avg_10 = list(map(str, os.popen('uptime')))[
         0].split(':')[-1].strip().split(', ')
