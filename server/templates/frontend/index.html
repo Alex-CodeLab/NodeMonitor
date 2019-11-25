@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div id="app">
+  <apexchart width="500"  :options="chartOptions" :series="series"></apexchart>
+</div>
+<div id="line"></div>
+<div id="sales-data"></div>
+<!-- <div id="rendered-series"></div> -->
+
+<script>
+
+Vue.component('apexchart', VueApexCharts)
+
+var app = new Vue({
+  el: '#app',
+  delimiters : ['[[', ']]' ],
+  data: function() {
+    return {
+
+      series: [
+        { name: '',
+          data: []
+        }
+      ],
+      chartOptions: {
+        stroke: {
+          width: 1,
+          curve: 'straight',
+        },
+        tooltip: { enabled: false },
+        xaxis: {
+          type: 'numeric', // datetime
+          labels: {
+            hideOverlappingLabels: true,
+            datetimeFormatter: {
+              year: 'yy',
+              month: "MMM 'yy",
+              day: 'dd MMM',
+              hour: 'HH:mm',
+            },
+          }
+        },
+        chart: {
+          id: 'vuechart-example',
+          toolbar: {
+              autoSelected: 'pan',
+              show: false
+            },
+          type: 'area',
+          animations: {enabled: false},
+          width: 1,
+          stacked: true,
+            events: {
+              selection: function (chart, e) {
+                console.log(new Date(e.xaxis.min))
+              }
+            }
+          },
+
+        dataLabels: {enabled: false},
+        },
+    }
+  },
+  methods: {
+    updateChart(msgInfo, msgData) {
+      var datas = []
+      console.log(this.series);
+      let i = 0;
+      for (item in msgData){
+        let k= this.series[i].data;
+        k.push(msgData[item]);
+        datas.push({data: k} )
+      }
+      this.series = datas
+    }
+  }
+});
+
+
+var ws = new WebSocket('ws://127.0.0.1:5555',[
+  'pub.sp.nanomsg.org'
+])
+
+ws.onmessage = function( e ){
+  var reader = new FileReader() // handle binary messages
+  reader.addEventListener('loadend', function(){
+    var result = reader.result;
+    handleMessage(result);
+  });
+  reader.readAsText( e.data );
+}
+
+var messages = [];
+
+function handleMessage(message){
+  // console.log(app.series[0].data);
+  // console.log(e);
+  if (typeof message === 'string' || message instanceof String) {
+    let msgInfo = message.split(" ",3);
+    let msgData = JSON.parse(message.split(msgInfo[2])[1]);
+
+
+    app.updateChart(msgInfo, msgData);
+  }
+}
+
+
+
+</script>
+{% endblock %}

@@ -3,16 +3,19 @@
 
   {% block content %}
 
-
 <script>
-
 var config = {{ modules|safe }} ;
-var modules = ['load','memory'] ;
+var modules = Object.keys(config) ;
+
+function display_graph(data){
+ let module = data.msg[0].module;
+}
 
 for (var mod of modules){
-  $.getJSON('/data/' + mod)
-    .then(function(data){
-      console.log(data);
+  $.getJSON('/data/' + mod , mod )
+    .then(function(data, status, xhr){
+
+      display_graph(data);
     })
     .fail(function(){
       console.log('Unable to download data.');
