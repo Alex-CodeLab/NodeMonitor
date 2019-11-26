@@ -62,8 +62,8 @@ Build whatever you want. Start with creating a ticket that describes a problem.
 ---------
 
 todo:
-     - (lightweight) frontend
-     - fix tests
-     - add modules
-     - rrd for hour/day
-     - write tests for websockets
+ - (lightweight) frontend
+ - fix tests
+ - add modules
+ - rrd for hour/day
+ - write tests for websockets
