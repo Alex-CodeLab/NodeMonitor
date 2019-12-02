@@ -49,6 +49,8 @@ class Server():
         self.init_batch()
         while True:
             msg = sub.recv()
+            if self.debug:
+                print(msg)
             wsock.send(msg)
             # add to db
             msgArray = msg.decode("utf-8").split(' ')
@@ -87,13 +89,12 @@ if __name__ == '__main__':
     Process(target=server.maven, args=(port, websocket_port)).start()
 
     if not server.args.get('--no-webserver'):
-        from webserver import *
+
         from flask import Flask, render_template, jsonify, make_response
 
         app = Flask(__name__)
         app.config['SECRET_KEY'] = 'some_secret_key.'
         db = Store()
-
 
 
         @app.route('/')

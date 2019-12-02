@@ -20,6 +20,7 @@ Goals:
 - easy to audit (less then 500lines of code)
 - super easy to extend
 - Push messages from Clients instead of Pull by server
+- multiprocessing, async (Trio)
 - extremely low cpu/memory usage
 - capable of running on SBC or IoT devices
 - (modules for BTC/Lightning)

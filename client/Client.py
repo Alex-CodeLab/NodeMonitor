@@ -1,12 +1,15 @@
-import time
-import nnpy
+import configparser
 import json
+import nnpy
 import signal
 import socket
-import configparser
+import trio
+import time
+import importlib
 from docopt import docopt
 from functools import partial
-from multiprocessing import Process
+
+from modules import *
 
 
 class Client():
@@ -35,32 +38,31 @@ class Client():
     def timestamp(self):
         return str(int(time.time()))
 
-    def start_module(self, process):
+
+    async def start_module(self, mod):
         pub = nnpy.Socket(nnpy.AF_SP, nnpy.PUB)
         pub.connect('tcp://{}:{}'.format(self.server_ip, self.server_port))
-        setattr(self, 'myprocess' , process)
+        setattr(self, mod, eval(mod+'.'+mod))
+
         while True:
-            message =  '{} {} {}'.format( self.timestamp(), self.nodeid, self.myprocess())
+            c = getattr(self, mod)
+            r = await c()
+            message =  '{} {} {}'.format( self.timestamp(), self.nodeid, r)
             pub.send(message)
             if self.debug:
                 print(message)
 
 
-def shutdown(signum, frame):
-    print('Closing.')
-    exit(0)
 
 
-if __name__ == '__main__':
-    signal.signal(signal.SIGINT, partial(shutdown))
+client = Client()
+client.load_settings()
+async def parent():
+    async with trio.open_nursery() as nursery:
+        for mod in [ 'load', 'memory']:
+            # m = __import__('{}.{}'.format('modules', mod ))
 
-    client = Client()
-    client.load_settings()
+            # load = importlib.import_module('{}.{}'.format('modules', mod ))
+            nursery.start_soon(client.start_module, mod)
 
-    for mod in client.modules.keys():
-        # get the function from submodule
-        m = __import__('{}.{}'.format('modules', mod ))
-        l = getattr(m, mod)
-        f = getattr(l, mod)
-
-        Process(target=client.start_module, args=(f , )).start()
+trio.run(parent)
