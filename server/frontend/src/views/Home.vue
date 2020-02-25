@@ -54,12 +54,12 @@ const chartOptions = {
   },
   series: {
     load: [{
-      name: 'series-1',
-      data: [1, 2, 3, 4],
+      name: 'load',
+      data: [],
     }],
     memory: [{
-      name: 'series-1',
-      data: [5, 6, 7, 8],
+      name: 'memory',
+      data: [],
     }],
   },
 };
@@ -92,8 +92,7 @@ export default {
       for (let i = 0; i < data.msg.length; i += 1) {
         values.push(parseFloat(data.msg[i].data.value));
       }
-      console.log(values);
-
+      // console.log(values);
       this.series[module] = [{
         data: values,
       }];

@@ -84,6 +84,41 @@ def shutdown(signum, frame):
     exit(0)
 
 
+
+
+
+# flask
+from flask import Flask, render_template, jsonify, make_response
+from flask_cors import CORS, cross_origin
+
+app = Flask(__name__,
+        static_url_path='',
+        static_folder='frontend/dist',
+        template_folder='frontend/dist')
+
+cors = CORS(app)
+app.config['SECRET_KEY'] = 'some_secret_key.'
+app.config['CORS_HEADERS'] = 'Content-Type'
+
+db = Store()
+
+# flask routes
+@app.route('/')
+def home():
+    try:
+        context = {'modules': server.modules}
+    except:
+        context = {}
+    return render_template("index.html", **context)
+
+@app.route('/data/<module>')
+@cross_origin()
+def get_data(module):
+    data = db.read('machina', module)
+
+    return jsonify({'msg': data, })
+
+
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, partial(shutdown))
 
@@ -93,32 +128,4 @@ if __name__ == '__main__':
     Process(target=server.maven, args=(port, websocket_port)).start()
 
     if not server.args.get('--no-webserver'):
-        from flask import Flask, render_template, jsonify, make_response
-        from flask_cors import CORS, cross_origin
-
-        # flask
-        app = Flask(__name__,
-                static_url_path='',
-                static_folder='frontend/dist',
-                template_folder='frontend/dist')
-
-        cors = CORS(app)
-        app.config['SECRET_KEY'] = 'some_secret_key.'
-        app.config['CORS_HEADERS'] = 'Content-Type'
-
-        db = Store()
-
-        # flask routes
-        @app.route('/')
-        def react():
-            context = {'modules': server.modules}
-            return render_template("index.html", **context)
-
-
-        @app.route('/data/<module>')
-        @cross_origin()
-        def get_data(module):
-            data = db.read('machina', module)
-
-            return jsonify({'msg': data, })
         app.run(debug=True)
