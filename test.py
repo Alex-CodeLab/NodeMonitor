@@ -17,9 +17,6 @@ class TestMethods(unittest.TestCase):
         # propagate the exceptions to the test client
         self.app.testing = True
 
-    def test_classname(self):
-        server = Server()
-        self.assertEqual(str(server) , 'Maven')
 
     def test_loadsettings(self):
         server = Server()

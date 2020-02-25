@@ -2,7 +2,7 @@
 [WIP]
 Work in progress.
 
-(basic functionality/framework works, but needs modules and a frontend)
+(basic functionality/framework works, but needs modules and better frontend)
 
 ------------------------
 
@@ -17,12 +17,12 @@ Can be used with or without a frontend dashboard (using Flask)
 Goals:
 - simple and efficient
 - small footprint (few external libraries)
-- easy to audit (less then 500lines of code)
+- easy to audit
 - super easy to extend
 - Push messages from Clients instead of Pull by server
 - multiprocessing, async (Trio)
-- extremely low cpu/memory usage
-- capable of running on SBC or IoT devices
+- very low cpu/memory usage
+- capable of running on SBC devices (or IoT with some changes)
 - (modules for BTC/Lightning)
 - (alerting mechanism)
 
@@ -33,7 +33,7 @@ Goals:
      | Collector |               _____________                 
      |           | <----push ----| Node 2    |  <--Module2. (interval)
      -------------               _____________  <--Module1. (interval)     
-       |      |                                   
+       |      |                   ...                
        |      |
        |      ----> [ batch write rrd DB ]
        websocket--> [ browser ]
@@ -47,11 +47,13 @@ add a module:
      add it to modules in server.conf
 
 -----------
-install:
+Install:
+(create a virtualenv , clone the repo.)
 
-     pip install nnpy flask
+     pip install -r requirements.txt 
 
-See the `client` and `server` folders.
+Run:
+  See README in the `client` and `server` folders.
 
 ------------
 

@@ -1,16 +1,14 @@
 import nnpy
 import configparser
 import time
-from db import Store
 import json
-import binascii
-import signal
+from db import Store
+import json, binascii, signal
 from flask import Flask, render_template, jsonify, make_response
 from multiprocessing import Process
 from functools import partial
 from docopt import docopt
-from pathlib import Path
-
+# from pathlib import Path
 
 class Server():
     """
@@ -31,10 +29,16 @@ class Server():
         config.read('server.conf')
         self.modules = json.loads(config['DEFAULT'].get('modules', '{}'))
 
-    def __str__(self):
-        return "Maven"
+    def _debug(self, message):
+        if self.debug:
+            print(message)
 
     def maven(self, port, wsock_port):
+        """
+        Collects all messages by listening for any incoming data from clients
+        and stores it to a internal rrdb
+        """
+
         # internal messaging
         sub = nnpy.Socket(nnpy.AF_SP, nnpy.SUB)
         sub.bind('tcp://127.0.0.1:{}'.format(port))
@@ -49,13 +53,12 @@ class Server():
         self.init_batch()
         while True:
             msg = sub.recv()
-            if self.debug:
-                print(msg)
+            self._debug(msg)
             wsock.send(msg)
-            # add to db
-            msgArray = msg.decode("utf-8").split(' ')
-            client = msgArray[1]
-            module = msgArray[2]
+            msgJson = json.loads(msg.decode("utf-8"))
+
+            client = msgJson['node']
+            module = msgJson['module']
             if module in self.modules.keys():
                 # add message to batch
                 if client not in self.batch[module]:
@@ -65,6 +68,7 @@ class Server():
             else:
                 print("Unknown module '{}'. Ignored.".format(module))
             if i >= 10:
+                # add to db
                 db.write(self.batch)
                 self.init_batch()
                 i = 0
@@ -89,22 +93,32 @@ if __name__ == '__main__':
     Process(target=server.maven, args=(port, websocket_port)).start()
 
     if not server.args.get('--no-webserver'):
-
         from flask import Flask, render_template, jsonify, make_response
+        from flask_cors import CORS, cross_origin
 
-        app = Flask(__name__)
+        # flask
+        app = Flask(__name__,
+                static_url_path='',
+                static_folder='frontend/dist',
+                template_folder='frontend/dist')
+
+        cors = CORS(app)
         app.config['SECRET_KEY'] = 'some_secret_key.'
+        app.config['CORS_HEADERS'] = 'Content-Type'
+
         db = Store()
 
-
+        # flask routes
         @app.route('/')
         def react():
             context = {'modules': server.modules}
-            return render_template("main2.html", **context)
+            return render_template("index.html", **context)
+
 
         @app.route('/data/<module>')
+        @cross_origin()
         def get_data(module):
             data = db.read('machina', module)
-            a = []
+
             return jsonify({'msg': data, })
-        app.run(debug=False)
+        app.run(debug=True)

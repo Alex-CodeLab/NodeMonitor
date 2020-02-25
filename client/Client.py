@@ -5,12 +5,13 @@ import signal
 import socket
 import trio
 import time
+import os
 import importlib
+
 from docopt import docopt
 from functools import partial
 
 from modules import *
-
 
 class Client():
     """
@@ -26,17 +27,25 @@ class Client():
 
     def __init__(self):
         self.debug = self.args.get('--debug', False)
+        self.load_settings()
 
-    def load_settings(self):
+    def load_settings(self, configfile='client.conf'):
         config = configparser.ConfigParser()
-        config.read('client.conf')
+        if not config.read(configfile):
+            print("{} missing".format(configfile))
+            exit()
         self.nodeid = config['DEFAULT'].get('id', socket.gethostname())
         self.server_ip = config['server'].get('ip', '127.0.0.1')
         self.server_port = config['server'].get('port', '5556')
         self.modules = json.loads(config['DEFAULT'].get('modules','{}'))
+        return config
 
     def timestamp(self):
         return str(int(time.time()))
+
+    def _debug(self, message):
+        if self.debug:
+            print(message)
 
 
     async def start_module(self, mod):
@@ -47,22 +56,32 @@ class Client():
         while True:
             c = getattr(self, mod)
             r = await c()
-            message =  '{} {} {}'.format( self.timestamp(), self.nodeid, r)
+            sp = r.split(" {")
+            modulename = sp.pop(0)
+            data = "{" + sp[0]
+            message =  '"ts":"{}", "node":"{}", "module":"{}", "data":{}'.format(
+                self.timestamp(), self.nodeid, modulename, data)
+            message = "{" + message + "}"
+            # send to Server
             pub.send(message)
-            if self.debug:
-                print(message)
+            self._debug(message)
 
 
+if __name__ == '__main__':
 
+    client = Client()
 
-client = Client()
-client.load_settings()
-async def parent():
-    async with trio.open_nursery() as nursery:
-        for mod in [ 'load', 'memory']:
-            # m = __import__('{}.{}'.format('modules', mod ))
+    async def parent():
+        async with trio.open_nursery() as nursery:
+            for mod in [ 'load', 'memory']:
+                try:
+                    nursery.start_soon(client.start_module, mod)
+                finally:
+                    print("Started: {}".format(mod))
 
-            # load = importlib.import_module('{}.{}'.format('modules', mod ))
-            nursery.start_soon(client.start_module, mod)
+            #clean shutdown
+            with trio.open_signal_receiver(signal.SIGINT) as signal_aiter:
+                async for signum in signal_aiter:
+                    exit()
 
-trio.run(parent)
+    trio.run(parent)
