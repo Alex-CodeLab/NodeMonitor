@@ -40,6 +40,7 @@ Goals:
 
 
 ------------
+#### modules
 add a module:
 
      create a new function in client/modules/
@@ -57,7 +58,8 @@ Run:
 
 ------------
 
-Contributing
+##### Contributing
+
 This is a open-source, community project.
 Build whatever you want. Start with creating a ticket that describes a problem.
 
