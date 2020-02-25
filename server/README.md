@@ -28,6 +28,6 @@ The Frontend uses Vue.js and Apexcharts.
 
 Start frontend:
      cd frontend
-     yarn run
+     yarn serve
 or
      yarn build       
