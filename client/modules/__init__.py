@@ -3,7 +3,7 @@ import glob
 import time
 import trio
 
-__all__ = ['load', 'memory']
+__all__ = ['load', 'memory', 'btcticker']
 
 def interval(seconds=30):
     def decorator(function):

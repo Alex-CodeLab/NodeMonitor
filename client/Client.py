@@ -73,7 +73,7 @@ if __name__ == '__main__':
 
     async def parent():
         async with trio.open_nursery() as nursery:
-            for mod in [ 'load', 'memory']:
+            for mod in client.modules.keys():
                 try:
                     nursery.start_soon(client.start_module, mod)
                 finally:
