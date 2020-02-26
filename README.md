@@ -26,6 +26,7 @@ Goals:
 - automatically add new graphs (without extra coding)
 - (modules for BTC/Lightning)
 - (alerting mechanism)
+- (gitlab / CI)
 
 ------------
 
