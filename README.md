@@ -23,6 +23,7 @@ Goals:
 - multiprocessing, async (Trio)
 - very low cpu/memory usage
 - capable of running on SBC devices (or IoT with some changes)
+- automatically add new graphs (without extra coding)
 - (modules for BTC/Lightning)
 - (alerting mechanism)
 
@@ -49,11 +50,13 @@ add a module:
 
 -----------
 Install:
+
 (create a virtualenv , clone the repo.)
 
-     pip install -r requirements.txt 
+     pip install -r requirements.txt
 
 Run:
+
   See README in the `client` and `server` folders.
 
 ------------

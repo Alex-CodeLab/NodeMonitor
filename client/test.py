@@ -12,9 +12,10 @@ class Testing(unittest.TestCase):
 
     def test_loadconfig(self):
         client = Client()
-        c = client.load_settings()
-        print(c)
-        # self.assertEqual()
+        config = client.load_settings()
+        self.assertEqual(type(config).__name__ , 'ConfigParser')
+        self.assertEqual(type(client.modules), type({}))
+
 
 
 if __name__ == '__main__':

@@ -10,6 +10,7 @@ Client for LNM
 
 
 start:
+
      python Client.py
 
 
