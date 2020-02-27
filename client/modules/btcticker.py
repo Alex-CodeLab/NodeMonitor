@@ -2,7 +2,7 @@ import json
 import requests
 from . import interval
 
-@interval(15)
+@interval(10)
 async def btcticker():
     response = requests.get('https://blockchain.info/ticker')
     res = response.json()

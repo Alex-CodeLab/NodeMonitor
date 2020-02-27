@@ -28,6 +28,7 @@ class Server():
         config = configparser.ConfigParser()
         config.read('server.conf')
         self.modules = json.loads(config['DEFAULT'].get('modules', '{}'))
+        self._debug(self.modules.keys())
 
     def _debug(self, message):
         if self.debug:
@@ -53,13 +54,13 @@ class Server():
         self.init_batch()
         while True:
             msg = sub.recv()
-            self._debug(msg)
-            wsock.send(msg)
+            # self._debug(msg)
             msgJson = json.loads(msg.decode("utf-8"))
 
             client = msgJson['node']
             module = msgJson['module']
             if module in self.modules.keys():
+                wsock.send(msg)
                 # add message to batch
                 if client not in self.batch[module]:
                     self.batch[module] = {client: []}

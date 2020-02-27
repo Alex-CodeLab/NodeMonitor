@@ -15,39 +15,38 @@ const chartOptions = {
   chartOptions: {
     chart: {
       id: 'vuechart',
-      animations: {
-        enabled: false,
-        easing: 'linear',
-        dynamicAnimation: {
-          speed: 1000,
-        },
-      },
       toolbar: {
         show: false,
       },
       zoom: {
         enabled: false,
       },
+      animations: {
+        enabled: false,
+        easing: 'linear',
+        dynamicAnimation: {
+          speed: 100,
+        },
+      },
     },
-    colors: ['#00BAEC'],
+    xaxis: {
+      labels: {
+        show: false,
+      },
+    },
     stroke: {
+      curve: 'straight',
       width: 1,
     },
+    title: {
+      text: 'Load',
+      align: 'left',
+    },
+    colors: ['#00BAEC'],
     grid: {
       yaxis: {
         lines: {
           show: false,
-        },
-      },
-      xAxis: {
-        labels: {
-          show: true,
-          hideOerlappingLabels: true,
-          showDuplcates: false,
-          trim: true,
-          style: {
-            colors: ['#AAAAAA'],
-          },
         },
       },
     },
@@ -59,6 +58,10 @@ const chartOptions = {
     }],
     memory: [{
       name: 'memory',
+      data: [],
+    }],
+    btcticker: [{
+      name: 'btcticker',
       data: [],
     }],
   },
@@ -79,13 +82,19 @@ export default {
     this.startWebsocket();
   },
   methods: {
-    updateChart() {
+    updateChart(data) {
       // TODO: remove this
-      const newData = this.series[0].data.map(() => Math.floor(Math.random() * 10) / 10);
-      console.log(newData);
-      this.series = [{
+      const msg = JSON.parse(data);
+      const newData = this.series[msg.module][0].data;
+      newData.shift();
+      newData.push(msg.data.value);
+      // const newData = this.series[msg.module][0].data.push(1);
+      // console.log(msg.module, newData);
+      // //   const newData = this.series[msg.module][0].data.push(1);
+      this.series.load = [{
         data: newData,
       }];
+      // }
     },
     initChartData(module, data) {
       const values = [];
@@ -103,8 +112,7 @@ export default {
         const reader = new FileReader(); // handle binary messages
         reader.addEventListener('loadend', () => {
           const { result } = reader;
-          // eslint-disable-next-line
-          console.log(2, result);
+          this.updateChart(result);
         });
         reader.readAsText(e.data);
       });
@@ -122,5 +130,4 @@ export default {
     },
   },
 };
-
 </script>
