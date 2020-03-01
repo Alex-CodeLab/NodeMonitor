@@ -86,8 +86,6 @@ def shutdown(signum, frame):
 
 
 
-
-
 # flask
 from flask import Flask, render_template, jsonify, make_response
 from flask_cors import CORS, cross_origin
@@ -116,8 +114,13 @@ def home():
 @cross_origin()
 def get_data(module):
     data = db.read('machina', module)
-
     return jsonify({'msg': data, })
+
+@app.route('/modules')
+@cross_origin()
+def get_moduleinfo():
+    return server.modules
+
 
 
 if __name__ == '__main__':

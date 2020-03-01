@@ -1,9 +1,12 @@
 <template>
 <div class="home">
-  <apexcharts width="500" type="line" :options="chartOptions" :series="series.load"></apexcharts>
-  <apexcharts width="500" type="line" :options="chartOptions" :series="series.memory"></apexcharts>
   <Style></Style>
+  <div v-for="(item, index) in series" :key="item.name" >
+    <apexcharts width="500" :options="getChartOptions(index)" :series="getData(index)" >
+    </apexcharts>
+  </div>
 </div>
+
 </template>
 
 <script>
@@ -15,6 +18,8 @@ const chartOptions = {
   chartOptions: {
     chart: {
       id: 'vuechart',
+      type: 'line',
+      stacked: false,
       toolbar: {
         show: false,
       },
@@ -34,12 +39,15 @@ const chartOptions = {
         show: false,
       },
     },
+    markers: {
+      size: 0,
+    },
     stroke: {
       curve: 'straight',
       width: 1,
     },
     title: {
-      text: 'Load',
+      text: '',
       align: 'left',
     },
     colors: ['#00BAEC'],
@@ -55,14 +63,17 @@ const chartOptions = {
     load: [{
       name: 'load',
       data: [],
+      type: 'line',
     }],
     memory: [{
-      name: 'memory',
       data: [],
+      name: 'memory',
+      type: 'line',
     }],
     btcticker: [{
-      name: 'btcticker',
       data: [],
+      name: 'btcticker',
+      type: 'line',
     }],
   },
 };
@@ -76,34 +87,41 @@ export default {
     Style,
   },
   mounted() {
-    // TODO: load from config
-    const modules = ['load', 'memory'];
-    modules.forEach((element) => this.callApi(element));
+    const url = 'http://127.0.0.1:5000/modules';
+    fetch(url)
+      .then((response) => response.json())
+      .then((modulesJson) => {
+        // console.log(modulesJson);
+        this.config = modulesJson;
+        const modules = Object.keys(modulesJson);
+        this.modules = modules;
+        modules.forEach((element) => this.initChartData(element));
+      });
     this.startWebsocket();
   },
   methods: {
-    updateChart(data) {
-      // TODO: remove this
-      const msg = JSON.parse(data);
-      const newData = this.series[msg.module][0].data;
-      newData.shift();
-      newData.push(msg.data.value);
-      // const newData = this.series[msg.module][0].data.push(1);
-      // console.log(msg.module, newData);
-      // //   const newData = this.series[msg.module][0].data.push(1);
-      this.series.load = [{
-        data: newData,
-      }];
-      // }
+    getData(index) {
+      return this.series[index];
     },
-    initChartData(module, data) {
-      const values = [];
-      for (let i = 0; i < data.msg.length; i += 1) {
-        values.push(parseFloat(data.msg[i].data.value));
+    getChartOptions(index) {
+      console.log(this.config[index]);
+      if (this.config[index].type === 'stacked') {
+        this.chartOptions.stacked = true;
+      } else {
+        this.config[index].type = 
       }
-      // console.log(values);
-      this.series[module] = [{
-        data: values,
+      return this.chartOptions;
+    },
+    updateChart(data) {
+      const msg = JSON.parse(data);
+      // console.log(msg);
+      const newData = this.series[msg.module][0].data;
+      if (newData.length > 1000) {
+        newData.shift();
+      }
+      newData.push(msg.data.value);
+      this.series[msg.module] = [{
+        data: newData,
       }];
     },
     startWebsocket() {
@@ -117,7 +135,7 @@ export default {
         reader.readAsText(e.data);
       });
     },
-    callApi(module) {
+    initChartData(module) {
       // eslint-disable-next-line
       // console.log(module);
       const url = `http://127.0.0.1:5000/data/${module}`;
@@ -125,7 +143,15 @@ export default {
         .then((response) => response.json())
         .then((myJson) => {
           this.messages = myJson;
-          this.initChartData(module, myJson);
+          // this.initChartData(module, myJson);
+          const values = [];
+          for (let i = 0; i < myJson.msg.length; i += 1) {
+            values.push(parseFloat(myJson.msg[i].data.value));
+          }
+          // console.log(values);
+          this.series[module] = [{
+            data: values,
+          }];
         });
     },
   },
