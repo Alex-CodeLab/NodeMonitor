@@ -1,9 +1,13 @@
 <template>
 <div class="home">
   <Style></Style>
-  <div v-for="(item, index) in series" :key="item.name" >
-    <apexcharts width="500" :options="getChartOptions(index)" :series="getData(index)" >
-    </apexcharts>
+  <div class="clearfix border">
+    <div v-for="(item, index) in series" :key="item.name" >
+      <div class="md-col md-col-4 border">
+        <apexcharts width="500" :options="getChartOptions(index)" :series="getData(index)" >
+        </apexcharts>
+      </div>
+    </div>
   </div>
 </div>
 
