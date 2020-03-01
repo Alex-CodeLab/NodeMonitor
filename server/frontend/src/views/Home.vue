@@ -108,7 +108,7 @@ export default {
       if (this.config[index].type === 'stacked') {
         this.chartOptions.stacked = true;
       } else {
-        this.config[index].type = 
+        this.chartOptions.type = this.config[index].type;
       }
       return this.chartOptions;
     },
