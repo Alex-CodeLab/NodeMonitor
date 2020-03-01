@@ -34,6 +34,11 @@ const chartOptions = {
         },
       },
     },
+    plotOptions: {
+      bar: {
+        horizontal: true,
+      },
+    },
     xaxis: {
       labels: {
         show: false,
@@ -91,11 +96,9 @@ export default {
     fetch(url)
       .then((response) => response.json())
       .then((modulesJson) => {
-        // console.log(modulesJson);
         this.config = modulesJson;
-        const modules = Object.keys(modulesJson);
-        this.modules = modules;
-        modules.forEach((element) => this.initChartData(element));
+        this.modules = Object.keys(modulesJson);
+        this.modules.forEach((element) => this.initChartData(element));
       });
     this.startWebsocket();
   },
@@ -104,7 +107,6 @@ export default {
       return this.series[index];
     },
     getChartOptions(index) {
-      console.log(this.config[index]);
       if (this.config[index].type === 'stacked') {
         this.chartOptions.stacked = true;
       } else {
@@ -114,7 +116,6 @@ export default {
     },
     updateChart(data) {
       const msg = JSON.parse(data);
-      // console.log(msg);
       const newData = this.series[msg.module][0].data;
       if (newData.length > 1000) {
         newData.shift();
