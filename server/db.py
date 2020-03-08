@@ -4,9 +4,10 @@ import os
 import random
 import string
 import subprocess
+import pathlib
 
 
-def wcount(filename):
+def linecount(filename):
     out = subprocess.Popen(['wc', '-l', filename],
                            stdout=subprocess.PIPE,
                            stderr=subprocess.STDOUT
@@ -38,13 +39,18 @@ class Store():
                     for line in data[module][client]:
                         f.write(line.rstrip() + '\n')
 
-                c = wcount(db_file) - self.maxsize
+                c = linecount(db_file) - self.maxsize
                 if c > 0:
                     delete_first_lines(db_file, c)
 
     def read(self, node, module):
         file_name = os.getcwd() + '/data/' + node + '/' + module + '.db'
         data = []
+
+        file = pathlib.Path(file_name)
+        if not file.exists():
+            f = open(file, 'w+')
+
         with open(file_name, 'r') as f:
             for line in f:
                 try:

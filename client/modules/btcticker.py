@@ -6,4 +6,5 @@ from . import interval
 async def btcticker():
     response = requests.get('https://blockchain.info/ticker')
     res = response.json()
-    return 'btcticker ' + json.dumps({"value": str(res["USD"]["15m"])})
+    msg = {"module": "btcticker", "value": str(res["USD"]["15m"])}
+    return json.dumps(msg)

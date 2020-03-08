@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import configparser
 import json
 import nnpy
@@ -55,16 +56,12 @@ class Client():
 
         while True:
             c = getattr(self, mod)
-            r = await c()
-            sp = r.split(" {")
-            modulename = sp.pop(0)
-            data = "{" + sp[0]
-            message =  '"ts":"{}", "node":"{}", "module":"{}", "data":{}'.format(
-                self.timestamp(), self.nodeid, modulename, data)
-            message = "{" + message + "}"
-            # send to Server
-            pub.send(message)
-            self._debug(message)
+            message = await c()
+            message = json.loads(message)
+            message['ts'] = self.timestamp()
+            message['node'] = self.nodeid
+            pub.send(json.dumps(message))
+            self._debug(json.dumps(message))
 
 
 if __name__ == '__main__':

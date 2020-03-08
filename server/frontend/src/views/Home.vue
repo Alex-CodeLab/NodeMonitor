@@ -10,7 +10,6 @@
     </div>
   </div>
 </div>
-
 </template>
 
 <script>
@@ -59,7 +58,7 @@ const chartOptions = {
       text: '',
       align: 'left',
     },
-    colors: ['#00BAEC'],
+    colors: ['#00BAEC', '#BA00EC', '#ECBA00'],
     grid: {
       yaxis: {
         lines: {
@@ -68,66 +67,97 @@ const chartOptions = {
       },
     },
   },
-  series: {
-    load: [{
-      name: 'load',
-      data: [],
-      type: 'line',
-    }],
-    memory: [{
-      data: [],
-      name: 'memory',
-      type: 'line',
-    }],
-    btcticker: [{
-      data: [],
-      name: 'btcticker',
-      type: 'line',
-    }],
-  },
+  series: {},
 };
 
+const series = {
+  load: [{
+    data: [],
+  }],
+  memory: [{
+    data: [],
+  }],
+  btcticker: [{
+    data: [],
+  }],
+};
+
+chartOptions.series = series;
 
 export default {
   name: 'Home',
+  created() {
+    const url = 'http://127.0.0.1:5000/modules';
+    fetch(url)
+      .then((response) => response.json())
+      .then((modulesJson) => {
+        // this.config = modulesJson;
+        this.modules = Object.keys(modulesJson);
+        this.modules.forEach((element) => {
+          chartOptions.series[element] = [{ data: [] }];
+          this.initChartData(element);
+        });
+      });
+  },
   data: () => (chartOptions),
   components: {
     apexcharts: VueApexCharts,
     Style,
   },
   mounted() {
+    this.startWebsocket();
+  },
+  beforeCreate() {
     const url = 'http://127.0.0.1:5000/modules';
     fetch(url)
       .then((response) => response.json())
       .then((modulesJson) => {
         this.config = modulesJson;
-        this.modules = Object.keys(modulesJson);
-        this.modules.forEach((element) => this.initChartData(element));
       });
-    this.startWebsocket();
   },
   methods: {
     getData(index) {
       return this.series[index];
     },
     getChartOptions(index) {
-      if (this.config[index].type === 'stacked') {
-        this.chartOptions.stacked = true;
-      } else {
-        this.chartOptions.type = this.config[index].type;
+      if (typeof this.config !== 'undefined') {
+        if (this.config[index].type === 'stacked') {
+          this.chartOptions.stacked = true;
+        } else {
+          this.chartOptions.type = this.config[index].type;
+        }
       }
       return this.chartOptions;
     },
     updateChart(data) {
       const msg = JSON.parse(data);
-      const newData = this.series[msg.module][0].data;
-      if (newData.length > 1000) {
+      let newData = this.series[msg.module][0].data;
+      if (newData.length >= 1000) {
         newData.shift();
       }
-      newData.push(msg.data.value);
-      this.series[msg.module] = [{
-        data: newData,
-      }];
+      if ('value' in msg) {
+        newData.push(msg.value);
+        this.series[msg.module] = [{
+          data: newData,
+        }];
+      } else {
+        const subdata = [];
+        Object.keys(msg.data).forEach((key) => {
+          for (let i = 0; i < Object.keys(msg.data).length; i += 1) {
+            if (typeof this.series[msg.module][i] !== 'undefined') {
+              if (this.series[msg.module][i].name === key) {
+                newData = this.series[msg.module][i].data;
+                if (newData.length >= 1000) {
+                  newData.shift();
+                }
+                newData.push(msg.data[key]);
+                subdata.push({ data: newData, name: key });
+              }
+            }
+          }
+        });
+        this.series[msg.module] = subdata;
+      }
     },
     startWebsocket() {
       const ws = new WebSocket('ws://127.0.0.1:5555', ['pub.sp.nanomsg.org']);
@@ -147,16 +177,34 @@ export default {
       fetch(url)
         .then((response) => response.json())
         .then((myJson) => {
-          this.messages = myJson;
-          // this.initChartData(module, myJson);
           const values = [];
+          const subdata = [];
+          subdata.total = [];
+          subdata.used = [];
+          subdata.value = [];
           for (let i = 0; i < myJson.msg.length; i += 1) {
-            values.push(parseFloat(myJson.msg[i].data.value));
+            if ('value' in myJson.msg[i]) {
+              values.push(parseFloat(myJson.msg[i].value));
+            }
+            if ('data' in myJson.msg[i]) {
+              Object.keys(myJson.msg[i].data).forEach((key) => {
+                subdata[key].push(myJson.msg[i].data[key]);
+              });
+            }
           }
-          // console.log(values);
-          this.series[module] = [{
-            data: values,
-          }];
+          // console.log(myJson.msg[0], typeof myJson.msg[0], Object.keys(myJson.msg[0]).length);
+          if (Object.keys(myJson.msg[0]).length > 0) {
+            if ('value' in myJson.msg[0]) {
+              this.series[module] = [{
+                data: values,
+              }];
+            } else if ('data' in myJson.msg[0]) {
+              Object.keys(subdata).forEach((key) => {
+                values.push({ data: subdata[key], name: key });
+              });
+              this.series[module] = values;
+            }
+          }
         });
     },
   },

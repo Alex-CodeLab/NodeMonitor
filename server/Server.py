@@ -1,14 +1,17 @@
+#!/usr/bin/env python
 import nnpy
 import configparser
 import time
 import json
-from db import Store
+import os
+import uuid
 import json, binascii, signal
 from flask import Flask, render_template, jsonify, make_response
-from multiprocessing import Process
+from db import Store
+from environs import Env
 from functools import partial
 from docopt import docopt
-# from pathlib import Path
+from multiprocessing import Process
 
 class Server():
     """
@@ -54,7 +57,7 @@ class Server():
         self.init_batch()
         while True:
             msg = sub.recv()
-            # self._debug(msg)
+            self._debug(msg)
             msgJson = json.loads(msg.decode("utf-8"))
 
             client = msgJson['node']
@@ -95,9 +98,14 @@ app = Flask(__name__,
         static_folder='frontend/dist',
         template_folder='frontend/dist')
 
+env = Env()
+env.read_env()
+
 cors = CORS(app)
-app.config['SECRET_KEY'] = 'some_secret_key.'
+app.config['DEBUG'] = env.bool('DEBUG', default=True)
+app.config['SECRET_KEY'] = env.str('SECRET_KEY', default=uuid.uuid4().hex)
 app.config['CORS_HEADERS'] = 'Content-Type'
+
 
 db = Store()
 
@@ -122,7 +130,6 @@ def get_moduleinfo():
     return server.modules
 
 
-
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, partial(shutdown))
 
@@ -132,4 +139,4 @@ if __name__ == '__main__':
     Process(target=server.maven, args=(port, websocket_port)).start()
 
     if not server.args.get('--no-webserver'):
-        app.run(debug=True)
+        app.run()
