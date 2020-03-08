@@ -2,7 +2,7 @@
 <div class="home">
   <Style></Style>
   <div class="clearfix border">
-    <div v-for="(item, index) in series" :key="item.name" >
+    <div v-for="(item, index) in getModules()" :key="item.name" >
       <div class="md-col md-col-4 border">
         <apexcharts width="500" :options="getChartOptions(index)" :series="getData(index)" >
         </apexcharts>
@@ -70,34 +70,12 @@ const chartOptions = {
   series: {},
 };
 
-const series = {
-  load: [{
-    data: [],
-  }],
-  memory: [{
-    data: [],
-  }],
-  btcticker: [{
-    data: [],
-  }],
-};
-
-chartOptions.series = series;
+// const series = { load: [] };
+chartOptions.series = { load: [] };
 
 export default {
   name: 'Home',
   created() {
-    const url = 'http://127.0.0.1:5000/modules';
-    fetch(url)
-      .then((response) => response.json())
-      .then((modulesJson) => {
-        // this.config = modulesJson;
-        this.modules = Object.keys(modulesJson);
-        this.modules.forEach((element) => {
-          chartOptions.series[element] = [{ data: [] }];
-          this.initChartData(element);
-        });
-      });
   },
   data: () => (chartOptions),
   components: {
@@ -105,15 +83,22 @@ export default {
     Style,
   },
   mounted() {
-    this.startWebsocket();
-  },
-  beforeCreate() {
     const url = 'http://127.0.0.1:5000/modules';
     fetch(url)
       .then((response) => response.json())
       .then((modulesJson) => {
         this.config = modulesJson;
+        this.modules = Object.keys(modulesJson);
+        this.modules.forEach((module) => {
+          chartOptions.series[module] = [{ data: [] }];
+          if (this.config[module].type !== 'text') {
+            this.initChartData(module);
+          }
+        });
       });
+    this.startWebsocket();
+  },
+  beforeCreate() {
   },
   methods: {
     getData(index) {
@@ -129,8 +114,16 @@ export default {
       }
       return this.chartOptions;
     },
-    updateChart(data) {
-      const msg = JSON.parse(data);
+    getModules() {
+      // todo: fix this.
+      return {
+        load: [],
+        memory: [],
+        btcticker: [],
+      };
+    },
+    updateChart(msg) {
+      // const msg = JSON.parse(data);
       let newData = this.series[msg.module][0].data;
       if (newData.length >= 1000) {
         newData.shift();
@@ -165,7 +158,14 @@ export default {
         const reader = new FileReader(); // handle binary messages
         reader.addEventListener('loadend', () => {
           const { result } = reader;
-          this.updateChart(result);
+          const msg = JSON.parse(result);
+          // console.log(msg.module);
+          if (this.config[msg.module].type !== 'text') {
+            this.updateChart(msg);
+          } else {
+            console.log('text');
+            // todo: handle text
+          }
         });
         reader.readAsText(e.data);
       });
@@ -192,7 +192,6 @@ export default {
               });
             }
           }
-          // console.log(myJson.msg[0], typeof myJson.msg[0], Object.keys(myJson.msg[0]).length);
           if (Object.keys(myJson.msg[0]).length > 0) {
             if ('value' in myJson.msg[0]) {
               this.series[module] = [{
